@@ -245,13 +245,13 @@ class Pheno2SQL(DBAccess):
                     'arr bigint',
                     'type text NOT NULL',
                 ],
-                 constraints=[
-                     'pk_fields PRIMARY KEY (column_name)'
-                 ],
-                 db_engine=self._get_db_engine(),
-                 drop_if_exists=True
+                db_engine=self._get_db_engine(),
+                constraints=[
+                    'pk_fields PRIMARY KEY (column_name)'
+                ], 
+                drop_if_exists=True
              )
-
+        print("got fields table")
         current_stop = 0
         for column_names_idx, column_names in self._loading_tmp['chunked_column_names']:
             new_columns_names = [x[1] for x in column_names]

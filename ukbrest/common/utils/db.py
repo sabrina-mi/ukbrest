@@ -1,28 +1,31 @@
 from sqlalchemy import create_engine
-
+import sqlite3
 
 def create_table(table_name, columns, db_engine, constraints=None, drop_if_exists=True):
     with db_engine.connect() as conn:
+        drop_st="DROP TABLE IF EXISTS {0};".format(table_name) if drop_if_exists else ''
+        #with_st = """WITH (
+        #        OIDS = FALSE
+        #   );"""
         sql_st = """
-            {drop_st}
             CREATE TABLE {create_if_not_exists} {table_name}
             (
                 {columns}
                 {constraints}
-            )
-            WITH (
-                OIDS = FALSE
             );
         """.format(
-            drop_st='DROP TABLE IF EXISTS {0};'.format(table_name) if drop_if_exists else '',
             create_if_not_exists='if not exists' if not drop_if_exists else '',
             table_name=table_name,
             columns=',\n'.join(columns),
             # FIXME support for more than one constraint
             constraints=',CONSTRAINT {}'.format(constraints[0]) if constraints is not None else ''
         )
-
+        conn.execute(drop_st)
         conn.execute(sql_st)
+        # conn.execute(with_st)
+        # cursor = conn.cursor()
+	
+        # cursor.executescript(sql_st)
 
 
 def create_indexes(table_name, columns, db_engine):
@@ -59,10 +62,10 @@ class DBAccess():
         if self.db_engine is None:
             if self.db_uri is None or self.db_uri == "":
                 raise ValueError('DB URI was not set')
-
-            kargs = {'pool_size': 10}
-            self.db_engine = create_engine(self.db_uri, **kargs)
-
+            try:
+                self.db_engine = create_engine(self.db_uri, pool_size=10)
+            except TypeError:
+                self.db_engine = create_engine(self.db_uri, echo=True)
         return self.db_engine
 
     def _vacuum(self, table_name):
