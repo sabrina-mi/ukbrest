@@ -178,6 +178,21 @@ class Pheno2SQL(DBAccess):
 
         return 'c{}'.format(column_name.replace('.', '_').replace('-', '_'))
 
+    def to_sql_k(self, p_engine, frame, name, index=True, index_label=None, schema=None, chunksize=None, dtype=None, **kwargs):
+        if dtype is not None:
+            from sqlalchemy.types import to_instance, TypeEngine
+            for col, my_type in dtype.items():
+                if not isinstance(to_instance(my_type), TypeEngine):
+                    raise ValueError('The type of %s is not a SQLAlchemy '
+                                 'type ' % col)
+
+        table = pd.io.sql.SQLTable(name, p_engine, frame=frame, index=index,
+                         if_exists="replace", index_label=index_label,
+                         schema=schema, dtype=dtype, **kwargs)
+        table.create()
+        table.insert(chunksize)
+
+
     def _create_tables_schema(self, csv_file, csv_file_idx):
         """
         Reads the data types of each data field in csv_file and create the necessary database tables.
@@ -251,7 +266,7 @@ class Pheno2SQL(DBAccess):
                 ], 
                 drop_if_exists=True
              )
-        print("got fields table")
+
         current_stop = 0
         for column_names_idx, column_names in self._loading_tmp['chunked_column_names']:
             new_columns_names = [x[1] for x in column_names]
@@ -281,13 +296,11 @@ class Pheno2SQL(DBAccess):
             # Create main table structure
             table_name = self._get_table_name(column_names_idx, csv_file_idx)
             logger.info('Table {} ({} columns)'.format(table_name, len(new_columns_names)))
-            data_sample.loc[[], new_columns_names].to_sql(table_name, self._get_db_engine(), if_exists='replace', dtype=db_dtypes)
-
-            with self._get_db_engine().connect() as conn:
-                conn.execute("""
-                    ALTER TABLE {table_name} ADD CONSTRAINT pk_{table_name} PRIMARY KEY (eid);
-                """.format(table_name=table_name))
-
+            
+            # we use a separate to_sql function wrapper to accept a primary key
+            pandas_sql = pd.io.sql.pandasSQL_builder(self._get_db_engine(), schema=None, flavor=None)
+            self.to_sql_k(p_engine=pandas_sql, frame=data_sample.loc[[], new_columns_names], name=table_name, index=True, index_label='eid', keys='eid', dtype=db_dtypes)
+            
             with self._get_db_engine().connect() as conn:
                 conn.execute('DROP INDEX ix_{table_name}_eid;'.format(table_name=table_name))
 
