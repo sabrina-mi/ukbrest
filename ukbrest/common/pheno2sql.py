@@ -461,9 +461,9 @@ class Pheno2SQL(DBAccess):
 
         insert_eids_sql = """
             insert into {all_eids_table} (eid)
-            (
+            
                 {sql_eids}
-            )
+            
         """.format(
             all_eids_table=ALL_EIDS_TABLE,
             sql_eids=select_eid_sql
@@ -481,11 +481,11 @@ class Pheno2SQL(DBAccess):
 
         create_table(BGEN_SAMPLES_TABLE,
             columns=[
-                'index bigint NOT NULL',
+                '[index] bigint NOT NULL',
                 'eid bigint NOT NULL',
             ],
             constraints=[
-                'pk_{} PRIMARY KEY (index, eid)'.format(BGEN_SAMPLES_TABLE)
+                'pk_{} PRIMARY KEY ([index], eid)'.format(BGEN_SAMPLES_TABLE)
             ],
             db_engine=self._get_db_engine()
          )
@@ -588,10 +588,9 @@ class Pheno2SQL(DBAccess):
     def _vacuum(self):
         logger.info('Vacuuming')
 
-        with self._get_db_engine().connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            conn.execute("""
-                vacuum analyze;
-            """)
+        with self._get_db_engine().connect().execution_options(isolation_level="SERIALIZABLE") as conn:
+            conn.execute("vacuum;")
+            conn.execute("analyze;")
 
     def load_data(self, vacuum=False):
         """
