@@ -77,8 +77,11 @@ class Postloader(DBAccess):
             data['data_coding'] = data_coding
 
             data.to_sql('codings', db_engine, if_exists='append', index=False)
+       
+        # indexes are not supported in sqlite
+        logger.warning('Indexes are not supported for SQLite')
 
-        create_indexes('codings', ['data_coding', 'coding', 'node_id', 'parent_id', 'selectable'], db_engine=db_engine)
+        # create_indexes('codings', ['data_coding', 'coding', 'node_id', 'parent_id', 'selectable'], db_engine=db_engine)
 
         self._vacuum('codings')
 

@@ -69,7 +69,6 @@ class DBAccess():
         return self.db_engine
 
     def _vacuum(self, table_name):
-        with self._get_db_engine().connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            conn.execute("""
-                vacuum analyze {table_name}
-            """.format(table_name=table_name))
+        with self._get_db_engine().connect().execution_options(isolation_level="SERIALIZABLE") as conn:
+            conn.execute("vacuum;")
+            conn.execute("analyze;")
