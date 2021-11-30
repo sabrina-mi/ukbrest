@@ -454,7 +454,7 @@ class Pheno2SQL(DBAccess):
             db_engine=self._get_db_engine()
          )
 
-        select_eid_sql = ' UNION DISTINCT '.join(
+        select_eid_sql = ' UNION '.join(
             'select eid from {}'.format(table_name)
             for table_name in self.table_list
         )
@@ -936,7 +936,7 @@ class Pheno2SQL(DBAccess):
             else:
                 raise Exception('Invalid query type')
 
-            column_sql_query = ' union distinct '.join(subqueries)
+            column_sql_query = ' union '.join(subqueries)
 
             all_columns_sql_queries.append(column_sql_query)
 
