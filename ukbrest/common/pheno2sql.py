@@ -946,14 +946,14 @@ class Pheno2SQL(DBAccess):
                 'table': order_by_table,
                 'columns_select':
                     's.eid as eid, ' +
-                    ', '.join('{column_name}::text'.format(column_name=column) for column in all_columns),
+                    ', '.join('{column_name}'.format(column_name=column) for column in all_columns),
             }
 
         final_sql_query = """
             select eid, {columns_names}
             from {inner_queries}
         """.format(
-            columns_names=', '.join('{}::text'.format(column) for column in all_columns),
+            columns_names=', '.join('{}'.format(column) for column in all_columns),
             inner_queries=self._create_joins(
                 ['({}) iq{}'.format(iq, iq_idx) for iq_idx, iq in enumerate(all_columns_sql_queries)],
                 join_type='full outer join'
